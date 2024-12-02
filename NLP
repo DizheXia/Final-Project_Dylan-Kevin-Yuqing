@@ -1,0 +1,76 @@
+
+```{python}
+import spacy
+from textblob import TextBlob
+from PyPDF2 import PdfReader
+from collections import Counter
+import matplotlib.pyplot as plt
+
+# Load spaCy's English model
+nlp = spacy.load("en_core_web_sm")
+
+# Define file paths for the PDFs
+announcement_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Federal Reserve Board - Federal Reserve issues FOMC statement.pdf"
+speech_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Official wording for interest rate increase.pdf"
+
+# Function to read PDF text
+def read_pdf(file_path):
+    reader = PdfReader(file_path)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+# Read PDF texts
+announcement_text = read_pdf(announcement_path)
+speech_text = read_pdf(speech_path)
+
+# Function to extract specific part-of-speech keywords
+def extract_keywords(doc):
+    adjectives = [token.text for token in doc if token.pos_ == "ADJ"]  # Adjectives
+    modals = [token.text for token in doc if token.tag_ in ["MD"]]  # Modals (may, might, will)
+    adverbs = [token.text for token in doc if token.pos_ == "ADV"]  # Adverbs
+    return adjectives, modals, adverbs
+
+# Analyze announcement text
+announcement_doc = nlp(announcement_text)
+announcement_adjectives, announcement_modals, announcement_adverbs = extract_keywords(announcement_doc)
+
+# Analyze speech text
+speech_doc = nlp(speech_text)
+speech_adjectives, speech_modals, speech_adverbs = extract_keywords(speech_doc)
+
+# Calculate sentence-level polarity for each text
+def calculate_sentence_polarity(doc):
+    sentences = [sent.text for sent in doc.sents]
+    polarities = [TextBlob(sentence).sentiment.polarity for sentence in sentences]
+    return sentences, polarities
+
+announcement_sentences, announcement_polarities = calculate_sentence_polarity(announcement_doc)
+speech_sentences, speech_polarities = calculate_sentence_polarity(speech_doc)
+
+# Print part-of-speech keyword counts
+def print_keyword_counts(adjectives, modals, adverbs, label):
+    print(f"\n{label} Adjective Counts:", Counter(adjectives).most_common(10))
+    print(f"{label} Modal Counts:", Counter(modals).most_common(10))
+    print(f"{label} Adverb Counts:", Counter(adverbs).most_common(10))
+
+print_keyword_counts(announcement_adjectives, announcement_modals, announcement_adverbs, "Announcement")
+print_keyword_counts(speech_adjectives, speech_modals, speech_adverbs, "Speech")
+
+# Visualize sentence-level polarity
+def plot_polarities(polarities, title):
+    plt.figure(figsize=(10, 6))
+    plt.plot(polarities, alpha=0.75, label="Polarity Score")
+    plt.axhline(0, color='red', linestyle='--', alpha=0.5, label="Neutral Polarity")
+    plt.title(title)
+    plt.xlabel("Sentence Number")
+    plt.ylabel("Polarity")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.show()
+
+# Plot polarities for announcement and speech
+plot_polarities(announcement_polarities, "Polarity of Sentences in FOMC Announcement")
+plot_polarities(speech_polarities, "Polarity of Sentences in Fed Chair Speech")
+```
