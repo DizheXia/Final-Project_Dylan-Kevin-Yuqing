@@ -418,6 +418,7 @@ import ace_tools as tools
 tools.display_dataframe_to_user(name="Top 5 Areas with Largest CPI Percentage Change", dataframe=top5_changes)
 tools.display_dataframe_to_user(name="Bottom 5 Areas with Smallest CPI Percentage Change", dataframe=bottom5_changes)
 
+<<<<<<< HEAD
 ```
 
 
@@ -688,4 +689,6 @@ def server(input, output, session):
 
 app = App(app_ui, server)
 
+=======
+>>>>>>> 91712bf6aa67f12a45551dd042ccd1c0ce553c10
 ```
