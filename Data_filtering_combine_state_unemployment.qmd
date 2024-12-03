@@ -1,0 +1,76 @@
+
+```{python}
+import pandas as pd
+
+# File paths for all Excel files
+file_paths = [
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty11.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty12.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty13.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty14.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty15.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty16.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty17.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty18.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty19.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty20.xlsx"
+]
+
+# Load and concatenate all files
+all_data = pd.concat(pd.read_excel(file) for file in file_paths)
+
+# Ensure columns are correctly named
+all_data.columns = all_data.columns.str.strip()  # Remove leading/trailing spaces
+all_data.rename(columns={
+    'Year': 'year',
+    'Labor Force': 'labor_force',
+    'Unemployed': 'unemployed',
+    'County Name/State Abbreviation': 'county_state'
+}, inplace=True)
+
+# Convert columns to numeric, forcing errors to NaN
+all_data['unemployed'] = pd.to_numeric(all_data['unemployed'], errors='coerce')
+all_data['labor_force'] = pd.to_numeric(all_data['labor_force'], errors='coerce')
+
+# Drop rows with NaN in numeric columns
+all_data.dropna(subset=['unemployed', 'labor_force'], inplace=True)
+
+# Extract state abbreviations
+all_data['state_abbreviation'] = all_data['county_state'].str[-2:]
+
+# Aggregate data by state and year
+state_yearly_data = all_data.groupby(['year', 'state_abbreviation']).agg(
+    total_unemployed=('unemployed', 'sum'),
+    total_labor_force=('labor_force', 'sum')
+).reset_index()
+
+# Calculate unemployment rate
+state_yearly_data['unemployment_rate'] = (
+    state_yearly_data['total_unemployed'] / state_yearly_data['total_labor_force']
+)
+
+# Map state abbreviations to full names
+state_abbreviation_to_name = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+    'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+    'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+    'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire',
+    'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina',
+    'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania',
+    'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee',
+    'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington',
+    'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
+}
+state_yearly_data['state_name'] = state_yearly_data['state_abbreviation'].map(state_abbreviation_to_name)
+
+# Handle unmatched abbreviations
+state_yearly_data['state_name'].fillna('Unknown', inplace=True)
+
+# Save the final data
+output_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\state_yearly_unemployment_rate_with_state_name.csv"
+state_yearly_data.to_csv(output_path, index=False)
+
+print("Processing complete. Data saved to:", output_path)
+```
