@@ -22,9 +22,7 @@ app_ui = ui.page_fluid(
     # Conditional rendering for CPI plots
     ui.panel_conditional(
         "input.visualization_type === 'Plots' && input.data_type === 'CPI'",
-        ui.output_image("cpi_plot1", width="100%", height="600px"),
-        ui.br(),
-        ui.output_image("cpi_plot2", width="100%", height="600px")
+        ui.output_image("cpi_plot", width="100%", height="600px"),
     ),
     # Conditional rendering for unemployment maps
     ui.panel_conditional(
@@ -69,13 +67,13 @@ def server(input, output, session):
         if input.visualization_type() == "Plots" and input.data_type() == "Unemployment rate":
             if input.time_period() == "2011-2015":
                 return {
-                    "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main-1/Graph/Unemployment Rate 2011-2015.png",
+                    "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Graph/Unemployment Rate 2011-2015.png",
                     "alt": "Unemployment Map (2011-2015)"
                 }
             elif input.time_period() == "2016-2020":
                 return {
-                    "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main-1/Graph/Unemployment Rate 2016-2020.png",
-                    "alt": "Unemployment Map (2016-2020)"
+                    "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Graph/Unemployment Rate 2016-2019.png",
+                    "alt": "Unemployment Map (2016-2019)"
                 }
         return None
 
@@ -85,29 +83,18 @@ def server(input, output, session):
         # Render difference plot
         if input.visualization_type() == "Plots" and input.data_type() == "Differences":
             return {
-                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main-1/Graph/Different_Graph_2011-2020.png",
+                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Graph/Difference_graph_2011-2019.png",
                 "alt": "Differences in Unemployment Rate"
             }
         return None
 
     @output
     @render.image
-    def cpi_plot1():
-        # Render CPI General Trend plot
-        if input.visualization_type() == "Plots" and input.data_type() == "CPI":
-            return {
-                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main-1/Graph/CPI trend.png",
-                "alt": "CPI General Trend (2011–2020)"
-            }
-        return None
-
-    @output
-    @render.image
-    def cpi_plot2():
+    def cpi_plot():
         # Render CPI Analysis plot
         if input.visualization_type() == "Plots" and input.data_type() == "CPI":
             return {
-                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main-1/Graph/CPI_analysis.png",
+                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Graph/CPI_analysis.png",
                 "alt": "CPI Analysis"
             }
         return None
@@ -118,7 +105,7 @@ def server(input, output, session):
         # Render first NLP plot
         if input.visualization_type() == "NLP Analysis":
             return {
-                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main-1/Graph/Poliarity_Announcement.png",
+                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Graph/Poliarity_Announcement.png",
                 "alt": "FOMC Announcement Polarity"
             }
         return None
@@ -129,7 +116,7 @@ def server(input, output, session):
         # Render second NLP plot
         if input.visualization_type() == "NLP Analysis":
             return {
-                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main-1/Graph/Polarity_Speech.png",
+                "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Graph/Polarity_Speech.png",
                 "alt": "Fed Chair Speech Polarity"
             }
         return None
