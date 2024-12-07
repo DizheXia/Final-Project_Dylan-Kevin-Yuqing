@@ -1,5 +1,6 @@
 Jinja2==3.1.4
 altair==5.5.0
+altair_saver==0.5.1
 anyio==4.6.2.post1
 appdirs==1.4.4
 asgiref==3.8.1
@@ -33,6 +34,7 @@ pyogrio==0.10.0
 pyparsing==3.2.0
 pyproj==3.7.0
 pytz==2024.2
+requests==2.31.0
 rpds-py==0.20.0
 shapely==2.0.6
 shiny==1.2.1
