@@ -20,11 +20,46 @@ output:
   echo: false
   eval: false
 ---
+    - Partner 1 : Dylan Xia (dizhexia), Section 2, github: DizheXia
+    - Partner 2 : Kevin Yao (qiyin), Section 3, github: UchicagoKevinYao
+    - Partner 3 : Yuqing Wen (wyuqing), Section 2, github: wwyuqing
 
+Research question: 
+Our project explores the economic impacts of interest rate changes made by the Federal Reserve on unemployment and spending patterns across the United 
+States. 
 
-    - Partner 1 : Dylan Xia; dizhexia
-    - Partner 2 : Kevin Yao; qiyin
-    - Partner 3 : Yuqing Wen, wyuqing
+The central focus was on analyzing how these adjustments, during the low-interest-rate period of 2011–2015 and the relatively high-interest-rate period of 
+2016–2019, influenced state-level unemployment trends and urban consumer spending patterns measured by the Consumer Price Index (CPI). We chose to compare these two 
+periods because of the Federal Reserve’s decision to increase the interest rate in late 2015. 
+
+In addition, we explored the sentiment and tone of Federal Reserve speeches and announcements to understand how these policies were conveyed to the public. The below 
+are the key questions we try to focus on:
+
+-	How does unemployment vary across states during these periods?
+-	What are the trends in Consumer Price Index (CPI) in urban areas?
+-	How does the tone and specific wording in Federal Reserve communications reflect policy strategies?
+
+Approach/methods: 
+To address these questions, we collected data from credible sources, including the Bureau of Labor Statistics for unemployment and CPI data, and official Federal Reserve communications for textual analysis. 
+Unemployment rates were aggregated from county to state levels for more accessible regional analysis. CPI data, reflecting urban spending patterns, allowed us to examine inflation trends over time. 
+For Fed communication analysis, we also did research on official press release documents for detailed wording comparison and analysis.
+
+Our methodology incorporated various visualization and analysis tools. For unemployment data, we analyzed yearly averages and used geopandas to create 
+choropleth maps that visualized regional disparities, and a difference map to highlight significant differences between the two periods. 
+For CPI data, we used Altair to create line plots demonstrating temporal trends and scatter plots comparing changes across urban areas between the two periods. 
+For textual analysis of Fed communications, we applied NLP techniques and used polarity scores to compare speeches versus announcements to evaluate sentiment and tone. 
+In addition, we developed a Shiny app that integrates all our visualizations into an interactive platform, allowing users to explore our findings dynamically.
+
+Weakness/difficulties: 
+A key difficulty we encountered was working with unemployment data, which was only available on a county-by-county basis and differentiated by year on the official 
+website. These particle data required more preprocessing and recalculation to make them appropriate for our analysis. 
+
+Specifically, we merged county-level data and recalculated it on a state-by-state basis, taking yearly averages and then recalculating mean values for each time 
+interval (2011–2015 and 2016–2019). This process required more computation and involved careful handling of missing values and inconsistencies in the dataset.
+
+Another challenge was balancing precision and generalization. Aggregating data at the state level helped simplify our visualizations and analysis but may have ignored more 
+localized trends and variations within states. For CPI data, which was only available to download for urban areas, we faced limitations in exploring non-urban trends, as 
+the dataset inherently excluded rural regions.
 
 ```{python}
 import pandas as pd
@@ -41,9 +76,14 @@ alt.renderers.enable("png")
 ```
 
 # Step 1: Plot data based on Unemployment Rate
+Plot descriptions for unemployment rate: 
+
+In general, it declined significantly between 2011 and 2019, with a sharp increase during the pandemic in 2020. The West and Southeast showed the greatest reductions in 
+unemployment, particularly in states like Nevada and California. 
+
+In contrast, the Midwest and East saw relatively little reductions or even no differences. Including 2020 data revealed less obvious improvements in unemployment.
 
 ## Unemployment Rate General Trend (2011~2020)
-
 ```{python}
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -85,7 +125,6 @@ plt.legend(fontsize=12)
 plt.xticks(yearly_avg_unemployment['year'], rotation=45)
 plt.tight_layout()
 
-# Show the plot
 plt.show()
 
 ```
@@ -99,7 +138,7 @@ import matplotlib.pyplot as plt
 from shapely.geometry import shape
 import requests
 
-# Step 1: Load the unemployment data
+# Load the unemployment data
 data_path = "state_yearly_unemployment_rate_with_state_name.csv"
 unemployment_data = pd.read_csv(data_path)
 
@@ -161,12 +200,12 @@ def plot_map(data, title):
             'aspect': 40, 
             'label': "Unemployment Rate (%)"
         },
-        vmin=vmin,  # Set global min
-        vmax=vmax   # Set global max
+        vmin=vmin,  
+        vmax=vmax  
     )
     merged_data.boundary.plot(ax=ax, linewidth=0.8, color="black")
-    ax.set_xlim([-180, -60])  # Extends to cover Alaska and Hawaii
-    ax.set_ylim([15, 72])     # Adjusted for both Hawaii and Alaska latitudes
+    ax.set_xlim([-180, -60])  
+    ax.set_ylim([15, 72])     
     ax.set_title(title, fontsize=16)
     ax.set_axis_off()
     plt.tight_layout()
@@ -188,11 +227,11 @@ import matplotlib.pyplot as plt
 from shapely.geometry import shape
 import requests
 
-# Step 1: Load the unemployment data
+# Load the unemployment data
 data_path = "state_yearly_unemployment_rate_with_state_name.csv"
 unemployment_data = pd.read_csv(data_path)
 
-# Step 2: Calculate average unemployment rates for 2011-2015 and 2016-2019 by state
+# Calculate average unemployment rates for 2011-2015 and 2016-2019 by state
 unemployment_avg_2011_2015 = (
     unemployment_data[(unemployment_data['year'] >= 2011) & (unemployment_data['year'] <= 2015)]
     .groupby('state_name')['unemployment_rate']
@@ -210,7 +249,7 @@ unemployment_avg_2016_2019 = (
 unemployment_avg_2011_2015['unemployment_rate'] = unemployment_avg_2011_2015['unemployment_rate'] * 100
 unemployment_avg_2016_2019['unemployment_rate'] = unemployment_avg_2016_2019['unemployment_rate'] * 100
 
-# Step 3: Calculate the difference between 2016-2019 and 2011-2015
+# Calculate the difference between 2016-2019 and 2011-2015
 unemployment_diff = pd.merge(
     unemployment_avg_2016_2019, 
     unemployment_avg_2011_2015, 
@@ -221,7 +260,7 @@ unemployment_diff['rate_difference'] = (
     unemployment_diff['unemployment_rate_2016_2019'] - unemployment_diff['unemployment_rate_2011_2015']
 )
 
-# Step 4: Load the JSON data from the API endpoint for state boundaries
+# Load the JSON data from the API endpoint for state boundaries
 shape_url = 'https://data.ojp.usdoj.gov/resource/5fdt-n5ne.json'
 response = requests.get(shape_url)
 
@@ -230,25 +269,25 @@ if response.status_code == 200:
 else:
     raise ValueError(f"Failed to fetch GeoJSON data. HTTP Status Code: {response.status_code}")
 
-# Step 5: Convert JSON data to a GeoDataFrame
+# Convert JSON data to a GeoDataFrame
 geometries = [shape(feature["the_geom"]) for feature in geo_data]
 properties = [{key: feature[key] for key in feature if key != "the_geom"} for feature in geo_data]
 shape_data = gpd.GeoDataFrame(properties, geometry=geometries)
 
-# Step 6: Merge shape data with unemployment difference data
+# Merge shape data with unemployment difference data
 unemployment_diff['state_name'] = unemployment_diff['state_name'].str.strip()
 merged_data = shape_data.merge(unemployment_diff, left_on='state', right_on='state_name', how='left')
 
 # Fill missing values for states with no data
 merged_data['rate_difference'] = merged_data['rate_difference'].fillna(0)
 
-# Step 7: Plot the unemployment difference map
+# Plot the unemployment difference map
 fig, ax = plt.subplots(1, 1, figsize=(15, 10))
 
 # Plot unemployment difference using a diverging colormap
 merged_data.plot(
     column='rate_difference', 
-    cmap='RdYlGn_r',  # Red-White-Green reversed color map
+    cmap='RdYlGn_r',  
     linewidth=0.8, 
     ax=ax, 
     edgecolor='black', 
@@ -266,8 +305,8 @@ merged_data.plot(
 merged_data.boundary.plot(ax=ax, linewidth=0.8, color="black")
 
 # Adjust map extent to include Alaska and Hawaii
-ax.set_xlim([-180, -60])  # Extends to cover Alaska and Hawaii
-ax.set_ylim([15, 72])     # Adjusted for both Hawaii and Alaska latitudes
+ax.set_xlim([-180, -60])  
+ax.set_ylim([15, 72])    
 
 # Customize the plot further for better visualization
 ax.set_title('Average Unemployment Rate Difference by State (2016-2019 vs 2011-2015)', fontsize=16)
@@ -279,9 +318,11 @@ plt.show()
 ```
 
 # Step 2: Plot data based on CPI
+Plot description for CPI: 
+CPI revealed a consistent upward trend, reflecting gradual inflation. Urban areas such as California experienced significant CPI increases marked in red, while regions 
+like Ohio and Wisconsin saw minimal changes marked in green.
 
 ## CPI Rate General Trend (2011~2020)
-
 ```{python}
 
 # Load the CPI data from the Excel file
@@ -324,16 +365,13 @@ plt.legend()
 plt.xticks(years, rotation=45)
 plt.tight_layout()
 
-# Show the plot
 plt.show()
 
 ```
 
 ## CPI Rate Scatter (Self-Regression)
 
-
 ```{python}
-
 # Load the CPI data
 file_path = 'CPI_urban_2011-2020_2.0.xlsx'  # Update this to your local file path
 cpi_data = pd.ExcelFile(file_path)
@@ -449,17 +487,25 @@ final_chart = alt.hconcat(
     alt.vconcat(top5_table, bottom5_table).properties(title='Top and Bottom 5 Areas (Colored)')
 )
 
-# Display the final chart
 final_chart
 
-
 ```
+
+# NLP:
+For NLP: Sentiment analysis using NLP showed that Fed speeches had a more emotionally engaging tone, as reflected in higher polarity scores, while announcements maintained 
+a more neutral tone, prioritizing clarity and consistency.
 
 
 
 
 # Shiny app
+Shiny app: To make our findings more interactive, we developed a Shiny app that includes all the plots and maps we created. It allows users to explore the 
+unemployment rate, CPI trends, and polarity plots through dynamic visualizations. 
 
+In more detail, the app has two dropdown menus: one for time intervals (‘2011-2015’, ‘2016-2020’), and another for visualization types (‘NLP Analysis’ and other ‘Plots’). Once ‘NLP Analysis’ is selected, two polarity plots appear at the same time. 
+
+Besides, after clicking on the ‘Plots’ option for visualization type, you can see three radio buttons (unemployment rate, CPI, and differences). And the unemployment 
+rate is special in that you can choose different time intervals to view the corresponding map.
 ```{python}
 from shiny import App, ui, render
 import pandas as pd
@@ -598,3 +644,27 @@ def server(input, output, session):
 app = App(app_ui, server)
 
 ```
+
+Policy implications: 
+Our findings reveal some key policy implications for addressing the various impacts of interest rate changes. Regional differences in unemployment trends highlight the 
+need for targeted interventions, such as targeted job creation programs in regions like the Midwest, which showed little improvement over time. 
+
+The CPI analysis underscores pressures of inflation in urban areas, suggesting policymakers consider tax adjustments or subsidies to support urban households while 
+promoting rural economic development. The balance between controlling the inflation and supporting employment also shows the importance of measuring the rate changes. 
+
+Lastly, the NLP analysis suggests that appropriate and flexible communication strategies can increase public trust and reduce uncertainty, emphasizing the 
+importance of effective messaging.
+
+
+Future work: 
+In conclusion, our project shows the diverse regional impacts of interest rate changes. While unemployment decreased overall, the degree of recovery varied 
+significantly across states, and the inflation was more obvious in urban areas like California. 
+
+Sentiment/tone analysis demonstrated the Federal Reserve’s dual strategy 
+of engaging the public emotionally through speeches while maintaining precision in official announcements. 
+
+Future research could expand in various directions. For example, including more indicators such as wage growth and housing prices would provide a more comprehensive 
+understanding of economic ripple effects. While we analyze urban data, exploring rural CPI trends can address regional differences and provide a broader perspective. 
+
+Extending the timeframe to include data before 2011 or after 2019 would also capture longer-term trends and the effects of recent economic events, such as the pandemic. 
+These directions would strengthen the foundation we’ve already explored and open up new ways to understand the impact of interest rate changes.
