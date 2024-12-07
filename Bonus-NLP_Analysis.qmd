@@ -1,0 +1,109 @@
+
+```{python}
+import spacy
+from textblob import TextBlob
+from PyPDF2 import PdfReader
+from collections import Counter
+import matplotlib.pyplot as plt
+
+# Load spaCy's English model
+nlp = spacy.load("en_core_web_sm")
+
+# Define file paths for the PDFs
+announcement_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Federal Reserve Board - Federal Reserve issues FOMC statement.pdf"
+speech_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Official wording for interest rate increase.pdf"
+
+# Function to read PDF text
+def read_pdf(file_path):
+    reader = PdfReader(file_path)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+# Read PDF texts
+announcement_text = read_pdf(announcement_path)
+speech_text = read_pdf(speech_path)
+
+# Function to extract specific part-of-speech keywords
+def extract_keywords(doc):
+    adjectives = [token.text for token in doc if token.pos_ == "ADJ"]  # Adjectives
+    modals = [token.text for token in doc if token.tag_ in ["MD"]]  # Modals (may, might, will)
+    adverbs = [token.text for token in doc if token.pos_ == "ADV"]  # Adverbs
+    return adjectives, modals, adverbs
+
+# Analyze announcement text
+announcement_doc = nlp(announcement_text)
+announcement_adjectives, announcement_modals, announcement_adverbs = extract_keywords(announcement_doc)
+
+# Analyze speech text
+speech_doc = nlp(speech_text)
+speech_adjectives, speech_modals, speech_adverbs = extract_keywords(speech_doc)
+
+# Calculate sentence-level polarity for each text
+def calculate_sentence_polarity(doc):
+    sentences = [sent.text for sent in doc.sents]
+    polarities = [TextBlob(sentence).sentiment.polarity for sentence in sentences]
+    return sentences, polarities
+
+announcement_sentences, announcement_polarities = calculate_sentence_polarity(announcement_doc)
+speech_sentences, speech_polarities = calculate_sentence_polarity(speech_doc)
+
+# Print part-of-speech keyword counts
+def print_keyword_counts(adjectives, modals, adverbs, label):
+    print(f"\n{label} Adjective Counts:", Counter(adjectives).most_common(10))
+    print(f"{label} Modal Counts:", Counter(modals).most_common(10))
+    print(f"{label} Adverb Counts:", Counter(adverbs).most_common(10))
+
+print_keyword_counts(announcement_adjectives, announcement_modals, announcement_adverbs, "Announcement")
+print_keyword_counts(speech_adjectives, speech_modals, speech_adverbs, "Speech")
+
+# Visualize sentence-level polarity
+def plot_polarities(polarities, title):
+    plt.figure(figsize=(10, 6))
+    plt.plot(polarities, alpha=0.75, label="Polarity Score")
+    plt.axhline(0, color='red', linestyle='--', alpha=0.5, label="Neutral Polarity")
+    plt.title(title)
+    plt.xlabel("Sentence Number")
+    plt.ylabel("Polarity")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.show()
+
+# Plot polarities for announcement and speech
+plot_polarities(announcement_polarities, "Polarity of Sentences in FOMC Announcement")
+plot_polarities(speech_polarities, "Polarity of Sentences in Fed Chair Speech")
+
+# Updated function to include percentage calculation
+def print_keyword_counts_with_percentage(adjectives, modals, adverbs, doc, label):
+    total_words = len(doc)  # Total number of tokens in the document
+    adjectives_count = len(adjectives)
+    modals_count = len(modals)
+    adverbs_count = len(adverbs)
+
+    print(f"\n{label} Adjective Counts:", Counter(adjectives).most_common(10))
+    print(f"Adjectives Percentage: {adjectives_count / total_words * 100:.2f}% of total words")
+
+    print(f"{label} Modal Counts:", Counter(modals).most_common(10))
+    print(f"Modals Percentage: {modals_count / total_words * 100:.2f}% of total words")
+
+    print(f"{label} Adverb Counts:", Counter(adverbs).most_common(10))
+    print(f"Adverbs Percentage: {adverbs_count / total_words * 100:.2f}% of total words")
+
+# Use the updated function for both texts
+print_keyword_counts_with_percentage(announcement_adjectives, announcement_modals, announcement_adverbs, announcement_doc, "Announcement")
+print_keyword_counts_with_percentage(speech_adjectives, speech_modals, speech_adverbs, speech_doc, "Speech")
+```
+
+A comparison of the Federal Reserve's FOMC announcement and the accompanying speech by the Fed Chair reveals notable differences in linguistic composition, particularly in the usage of adjectives, modal verbs, and adverbs.
+
+- The announcement is characterised by a prevalence of adjectives, which account for 8.61% of the total words. The announcement is notable for its relatively high proportion of adjectives, which constitute 8.61% of the total number of words. The most frequently occurring adjectives are "economic," "federal," "FOMC," and "longer." This reflects a focus on institutional references, policy horizons, and economic conditions.
+- Modals: The modal verbs (e.g., "will," "should") are used at a rate of 1.29%. The frequent use of the modal verb "will" suggests a forward-looking stance and planned policy actions.
+- Adverbs: Adverbs account for 2.19% of the total number of words. Terms such as "further," "however," and "currently" indicate subtle shifts in perspective, qualifications of statements, and temporal framing.
+
+A summary of the speech is provided below:
+- Adjectives: Adjectives account for 6.22% of the total number of words, which is a relatively lower proportion than that observed in the announcement. The use of terms such as "federal," "economic," "financial," "appropriate," and "transitory" suggests an emphasis on conditions, policy suitability, and evolving circumstances.
+- Modals: The speech employs a greater number of modal verbs (1.41% of total words) than the announcement, with "will," "would," and "could" being the most prevalent. This indicates an increased focus on potential scenarios, policymaker intentions, and conditional outcomes.
+- Adverbs: The speech employs a greater number of adverbs than the announcement, with the former containing 3.86% of total words. The use of common adverbs, such as "so," "very," "well," "also," and "carefully," conveys stance, degree, and manner, thereby adding depth to the Chair's explanatory narrative.
+
+In conclusion, the announcement is more adjective-heavy, framing the current economic landscape and policies. In contrast, the speech relies more on modal verbs and adverbs to explore possibilities, clarify intent, and describe the manner in which policies may unfold.
