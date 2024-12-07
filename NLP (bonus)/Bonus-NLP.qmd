@@ -1,29 +1,34 @@
-
+Editor: Kevin Yao
 ```{python}
 import spacy
 from textblob import TextBlob
 from PyPDF2 import PdfReader
 from collections import Counter
 import matplotlib.pyplot as plt
+import requests
+import io
 
 # Load spaCy's English model
 nlp = spacy.load("en_core_web_sm")
 
-# Define file paths for the PDFs
-announcement_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Federal Reserve Board - Federal Reserve issues FOMC statement.pdf"
-speech_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Official wording for interest rate increase.pdf"
+# Define URLs for the PDFs in the GitHub repository
+announcement_url = "https://raw.githubusercontent.com/DizheXia/Final-Project_Dylan-Kevin-Yuqing/8ebdae087c42de75001a133680c9167496ed14f3/NLP%20wording%20document/Federal%20Reserve%20Board%20-%20Federal%20Reserve%20issues%20FOMC%20statement.pdf"
+speech_url = "https://raw.githubusercontent.com/DizheXia/Final-Project_Dylan-Kevin-Yuqing/8ebdae087c42de75001a133680c9167496ed14f3/NLP%20wording%20document/Official%20wording%20for%20interest%20rate%20increase.pdf"
 
-# Function to read PDF text
-def read_pdf(file_path):
-    reader = PdfReader(file_path)
+# Function to download and read PDF text
+def read_pdf_from_url(url):
+    response = requests.get(url)
+    response.raise_for_status()  # Raise an error if the request fails
+    file = io.BytesIO(response.content)
+    reader = PdfReader(file)
     text = ""
     for page in reader.pages:
         text += page.extract_text()
     return text
 
-# Read PDF texts
-announcement_text = read_pdf(announcement_path)
-speech_text = read_pdf(speech_path)
+# Read PDF texts from URLs
+announcement_text = read_pdf_from_url(announcement_url)
+speech_text = read_pdf_from_url(speech_url)
 
 # Function to extract specific part-of-speech keywords
 def extract_keywords(doc):
@@ -94,6 +99,8 @@ def print_keyword_counts_with_percentage(adjectives, modals, adverbs, doc, label
 print_keyword_counts_with_percentage(announcement_adjectives, announcement_modals, announcement_adverbs, announcement_doc, "Announcement")
 print_keyword_counts_with_percentage(speech_adjectives, speech_modals, speech_adverbs, speech_doc, "Speech")
 ```
+
+
 
 A comparison of the Federal Reserve's FOMC announcement and the accompanying speech by the Fed Chair reveals notable differences in linguistic composition, particularly in the usage of adjectives, modal verbs, and adverbs.
 
