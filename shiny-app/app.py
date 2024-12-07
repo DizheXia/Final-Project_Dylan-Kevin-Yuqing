@@ -1,24 +1,59 @@
 from shiny import App, render, ui
-
-app_ui = ui.page_fluid(
-    ui.panel_title("Hello Shiny!"),
-    ui.input_slider("n", "N", 0, 100, 20),
-    ui.output_text_verbatim("txt"),
-)
-
-
-def server(input, output, session):
-    @render.text
-    def txt():
-        return f"n*2 is {input.n() * 2}"
-
-
-app = App(app_ui, server)
-
-
-from shiny import App, ui, render
-import pandas as pd
 import altair as alt
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import os
+
+# Load unemployment data
+data_path = "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Unemployment Rate Map & CPI Plot/state_yearly_unemployment_rate_with_state_name.csv"
+unemployment_data = pd.read_csv(data_path)
+
+# Rename columns for consistency
+unemployment_data.rename(columns={'state_name': 'State', 'year': 'Year'}, inplace=True)
+
+# Load GeoJSON data for US states
+shape_url = 'https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json'
+shape_data = gpd.read_file(shape_url)
+
+# Directory to store generated maps
+output_dir = "/tmp/maps"
+os.makedirs(output_dir, exist_ok=True)
+
+# Function to dynamically create maps
+def create_map(year):
+    # Filter data for the selected year
+    filtered_data = unemployment_data[unemployment_data['Year'] == year]
+    filtered_data = filtered_data.groupby('State', as_index=False)['unemployment_rate'].mean()
+    filtered_data['unemployment_rate'] = filtered_data['unemployment_rate'] * 100 
+
+    # Merge with shape data
+    merged_data = shape_data.merge(filtered_data, left_on='name', right_on='State', how='left')
+    merged_data['unemployment_rate'] = merged_data['unemployment_rate'].fillna(0)  
+
+    # Plot map
+    fig, ax = plt.subplots(1, 1, figsize=(15, 10))
+    merged_data.plot(
+        column='unemployment_rate',
+        cmap='Blues',
+        linewidth=0.8,
+        ax=ax,
+        edgecolor='black',
+        legend=True,
+        legend_kwds={
+            'shrink': 0.7,
+            'orientation': "horizontal",
+            'label': "Unemployment Rate (%)"
+        }
+    )
+    ax.set_title(f"Unemployment Rate by State ({year})", fontsize=16)
+    ax.set_axis_off()
+    
+    # Save map to file
+    filepath = os.path.join(output_dir, f"map_{year}.png")
+    plt.savefig(filepath, dpi=300)
+    plt.close(fig)
+    return filepath
 
 # Define UI
 app_ui = ui.page_fluid(
@@ -42,10 +77,11 @@ app_ui = ui.page_fluid(
         "input.visualization_type === 'Plots' && input.data_type === 'CPI'",
         ui.output_image("cpi_plot", width="100%", height="600px"),
     ),
-    # Conditional rendering for unemployment maps
+    # Conditional rendering for unemployment maps (dynamic by year)
     ui.panel_conditional(
         "input.visualization_type === 'Plots' && input.data_type === 'Unemployment rate'",
-        ui.output_image("unemployment_map", width="100%", height="600px")
+        ui.input_slider("year_slider", "Select Year", min=2011, max=2020, value=2015, step=1),
+        ui.output_image("dynamic_unemployment_map", width="100%", height="600px")
     ),
     # Conditional rendering for difference plot
     ui.panel_conditional(
@@ -80,19 +116,11 @@ def server(input, output, session):
 
     @output
     @render.image
-    def unemployment_map():
-        # Render unemployment map based on time period
+    def dynamic_unemployment_map():
         if input.visualization_type() == "Plots" and input.data_type() == "Unemployment rate":
-            if input.time_period() == "2011-2015":
-                return {
-                    "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/pictures/Unemployment Rate 2011-2015.png",
-                    "alt": "Unemployment Map (2011-2015)"
-                }
-            elif input.time_period() == "2016-2020":
-                return {
-                    "src": "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/pictures/Unemployment Rate 2016-2019.png",
-                    "alt": "Unemployment Map (2016-2019)"
-                }
+            year = input.year_slider()
+            map_path = create_map(year)
+            return {"src": map_path, "alt": f"Unemployment Rate Map for {year}"}
         return None
 
     @output
