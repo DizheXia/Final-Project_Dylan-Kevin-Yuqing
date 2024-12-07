@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Load unemployment data
-data_path = "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing-main/Unemployment Rate Map & CPI Plot/state_yearly_unemployment_rate_with_state_name.csv"
+data_path = "/Users/alina./Desktop/Final-Project_Dylan-Kevin-Yuqing/data/state_yearly_unemployment_rate_with_state_name.csv"
 unemployment_data = pd.read_csv(data_path)
 
 # Rename columns for consistency
