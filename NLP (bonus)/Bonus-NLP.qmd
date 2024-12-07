@@ -1,4 +1,4 @@
-Editor: Kevin Yao
+
 ```{python}
 import spacy
 from textblob import TextBlob
