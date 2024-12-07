@@ -61,6 +61,83 @@ Another challenge was balancing precision and generalization. Aggregating data a
 localized trends and variations within states. For CPI data, which was only available to download for urban areas, we faced limitations in exploring non-urban trends, as 
 the dataset inherently excluded rural regions.
 
+# Step 0: Data combining for state
+```{python}
+import pandas as pd
+# File paths for all Excel files
+file_paths = [
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty11.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty12.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty13.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty14.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty15.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty16.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty17.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty18.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty19.xlsx",
+    r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\US unemployment rate_2011-2020\laucnty20.xlsx"
+]
+
+# Load and concatenate all files
+all_data = pd.concat(pd.read_excel(file) for file in file_paths)
+
+# Ensure columns are correctly named
+all_data.columns = all_data.columns.str.strip()  # Remove leading/trailing spaces
+all_data.rename(columns={
+    'Year': 'year',
+    'Labor Force': 'labor_force',
+    'Unemployed': 'unemployed',
+    'County Name/State Abbreviation': 'county_state'
+}, inplace=True)
+
+# Convert columns to numeric, forcing errors to NaN
+all_data['unemployed'] = pd.to_numeric(all_data['unemployed'], errors='coerce')
+all_data['labor_force'] = pd.to_numeric(all_data['labor_force'], errors='coerce')
+
+# Drop rows with NaN in numeric columns
+all_data.dropna(subset=['unemployed', 'labor_force'], inplace=True)
+
+# Extract state abbreviations
+all_data['state_abbreviation'] = all_data['county_state'].str[-2:]
+
+# Aggregate data by state and year
+state_yearly_data = all_data.groupby(['year', 'state_abbreviation']).agg(
+    total_unemployed=('unemployed', 'sum'),
+    total_labor_force=('labor_force', 'sum')
+).reset_index()
+
+# Calculate unemployment rate
+state_yearly_data['unemployment_rate'] = (
+    state_yearly_data['total_unemployed'] / state_yearly_data['total_labor_force']
+)
+
+# Map state abbreviations to full names
+state_abbreviation_to_name = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+    'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+    'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+    'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire',
+    'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina',
+    'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania',
+    'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee',
+    'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington',
+    'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
+}
+state_yearly_data['state_name'] = state_yearly_data['state_abbreviation'].map(state_abbreviation_to_name)
+
+# Handle unmatched abbreviations
+state_yearly_data['state_name'].fillna('Unknown', inplace=True)
+
+# Save the final data
+output_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\state_yearly_unemployment_rate_with_state_name.csv"
+state_yearly_data.to_csv(output_path, index=False)
+
+print("Processing complete. Data saved to:", output_path)
+```
+
+
 ```{python}
 import pandas as pd
 import geopandas as gpd
@@ -494,8 +571,101 @@ final_chart
 # NLP:
 For NLP: Sentiment analysis using NLP showed that Fed speeches had a more emotionally engaging tone, as reflected in higher polarity scores, while announcements maintained 
 a more neutral tone, prioritizing clarity and consistency.
+```{python}
+import spacy
+from textblob import TextBlob
+from PyPDF2 import PdfReader
+from collections import Counter
+import matplotlib.pyplot as plt
 
+# Load spaCy's English model
+nlp = spacy.load("en_core_web_sm")
 
+# Define file paths for the PDFs
+announcement_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Federal Reserve Board - Federal Reserve issues FOMC statement.pdf"
+speech_path = r"E:\UChicago\[4] 24 Autumn\Python 2\Final project\Official wording for interest rate increase.pdf"
+
+# Function to read PDF text
+def read_pdf(file_path):
+    reader = PdfReader(file_path)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+# Read PDF texts
+announcement_text = read_pdf(announcement_path)
+speech_text = read_pdf(speech_path)
+
+# Function to extract specific part-of-speech keywords
+def extract_keywords(doc):
+    adjectives = [token.text for token in doc if token.pos_ == "ADJ"]  # Adjectives
+    modals = [token.text for token in doc if token.tag_ in ["MD"]]  # Modals (may, might, will)
+    adverbs = [token.text for token in doc if token.pos_ == "ADV"]  # Adverbs
+    return adjectives, modals, adverbs
+
+# Analyze announcement text
+announcement_doc = nlp(announcement_text)
+announcement_adjectives, announcement_modals, announcement_adverbs = extract_keywords(announcement_doc)
+
+# Analyze speech text
+speech_doc = nlp(speech_text)
+speech_adjectives, speech_modals, speech_adverbs = extract_keywords(speech_doc)
+
+# Calculate sentence-level polarity for each text
+def calculate_sentence_polarity(doc):
+    sentences = [sent.text for sent in doc.sents]
+    polarities = [TextBlob(sentence).sentiment.polarity for sentence in sentences]
+    return sentences, polarities
+
+announcement_sentences, announcement_polarities = calculate_sentence_polarity(announcement_doc)
+speech_sentences, speech_polarities = calculate_sentence_polarity(speech_doc)
+
+# Print part-of-speech keyword counts
+def print_keyword_counts(adjectives, modals, adverbs, label):
+    print(f"\n{label} Adjective Counts:", Counter(adjectives).most_common(10))
+    print(f"{label} Modal Counts:", Counter(modals).most_common(10))
+    print(f"{label} Adverb Counts:", Counter(adverbs).most_common(10))
+
+print_keyword_counts(announcement_adjectives, announcement_modals, announcement_adverbs, "Announcement")
+print_keyword_counts(speech_adjectives, speech_modals, speech_adverbs, "Speech")
+
+# Visualize sentence-level polarity
+def plot_polarities(polarities, title):
+    plt.figure(figsize=(10, 6))
+    plt.plot(polarities, alpha=0.75, label="Polarity Score")
+    plt.axhline(0, color='red', linestyle='--', alpha=0.5, label="Neutral Polarity")
+    plt.title(title)
+    plt.xlabel("Sentence Number")
+    plt.ylabel("Polarity")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.show()
+
+# Plot polarities for announcement and speech
+plot_polarities(announcement_polarities, "Polarity of Sentences in FOMC Announcement")
+plot_polarities(speech_polarities, "Polarity of Sentences in Fed Chair Speech")
+
+# Updated function to include percentage calculation
+def print_keyword_counts_with_percentage(adjectives, modals, adverbs, doc, label):
+    total_words = len(doc)  # Total number of tokens in the document
+    adjectives_count = len(adjectives)
+    modals_count = len(modals)
+    adverbs_count = len(adverbs)
+
+    print(f"\n{label} Adjective Counts:", Counter(adjectives).most_common(10))
+    print(f"Adjectives Percentage: {adjectives_count / total_words * 100:.2f}% of total words")
+
+    print(f"{label} Modal Counts:", Counter(modals).most_common(10))
+    print(f"Modals Percentage: {modals_count / total_words * 100:.2f}% of total words")
+
+    print(f"{label} Adverb Counts:", Counter(adverbs).most_common(10))
+    print(f"Adverbs Percentage: {adverbs_count / total_words * 100:.2f}% of total words")
+
+# Use the updated function for both texts
+print_keyword_counts_with_percentage(announcement_adjectives, announcement_modals, announcement_adverbs, announcement_doc, "Announcement")
+print_keyword_counts_with_percentage(speech_adjectives, speech_modals, speech_adverbs, speech_doc, "Speech")
+```
 
 
 # Shiny app
