@@ -558,7 +558,7 @@ bottom5_table = alt.Chart(bottom5_changes).mark_text(align='left', fontSize=12, 
 # Combine scatter plot with updated tables
 scatter_chart = (scatter + top5 + top5_labels + bottom5 + bottom5_labels + diagonal_line).properties(
     title='Scatter Plot and Highlights of CPI (2011–2015 vs. 2016–2019)',
-    width=480,
+    width=550,
     height=300
 )
 
